@@ -114,16 +114,10 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
       builds for an incremental package. This option is only meaningful when
       -i is specified.
 
-  --payload_signer <signer>
-      Specify the signer when signing the payload and metadata for A/B OTAs.
-      By default (i.e. without this flag), it calls 'openssl pkeyutl' to sign
-      with the package private key. If the private key cannot be accessed
-      directly, a payload signer that knows how to do that should be specified.
-      The signer will be supplied with "-inkey <path_to_key>",
-      "-in <input_file>" and "-out <output_file>" parameters.
+  --backup <boolean>
+      Enable or disable the execution of backuptool.sh.
+      Disabled by default.
 
-  --payload_signer_args <args>
-      Specify the arguments needed for payload signer.
 """
 
 import sys
@@ -172,8 +166,7 @@ OPTIONS.cache_size = None
 OPTIONS.stash_threshold = 0.8
 OPTIONS.gen_verify = False
 OPTIONS.log_diff = None
-OPTIONS.payload_signer = None
-OPTIONS.payload_signer_args = []
+OPTIONS.backuptool = False
 
 def MostPopularKey(d, default):
   """Given a dict, return the key corresponding to the largest
@@ -629,6 +622,9 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
 
   device_specific.FullOTA_InstallBegin()
 
+  if OPTIONS.backuptool:
+    script.RunBackup("backup")
+
   system_progress = 0.75
 
   if OPTIONS.wipe_user_data:
@@ -701,6 +697,10 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
 
   common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
+
+  if OPTIONS.backuptool:
+    script.ShowProgress(0.02, 10)
+    script.RunBackup("restore")
 
   script.ShowProgress(0.05, 5)
   script.WriteRawImage("/boot", "boot.img")
@@ -1945,10 +1945,8 @@ def main(argv):
       OPTIONS.gen_verify = True
     elif o == "--log_diff":
       OPTIONS.log_diff = a
-    elif o == "--payload_signer":
-      OPTIONS.payload_signer = a
-    elif o == "--payload_signer_args":
-      OPTIONS.payload_signer_args = shlex.split(a)
+    elif o in ("--backup"):
+      OPTIONS.backuptool = bool(a.lower() == 'true')
     else:
       return False
     return True
@@ -1978,8 +1976,7 @@ def main(argv):
                                  "stash_threshold=",
                                  "gen_verify",
                                  "log_diff=",
-                                 "payload_signer=",
-                                 "payload_signer_args=",
+                                 "backup=",
                              ], extra_option_handler=option_handler)
 
   if len(args) != 2:
