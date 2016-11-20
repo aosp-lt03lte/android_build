@@ -896,4 +896,7 @@ ifneq ($(TARGET_COPY_FILES_OVERRIDES),)
     PRODUCT_COPY_FILES := $(filter-out $(TARGET_COPY_FILES_OVERRIDES), $(PRODUCT_COPY_FILES))
 endif
 
+#AOSP Vendor
+$(eval include vendor/aosp/common.mk)
+
 include $(BUILD_SYSTEM)/dumpvar.mk
