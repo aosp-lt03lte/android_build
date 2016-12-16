@@ -57,6 +57,7 @@ PRODUCT_PACKAGES += \
     Telecom \
     TeleService \
     VpnDialogs \
-    MmsService
+    MmsService \
+    WallpaperPicker
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_base.mk)
